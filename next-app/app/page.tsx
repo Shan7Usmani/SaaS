@@ -468,19 +468,23 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-          <div className="mt-10 border-t border-primary/10 pt-6 text-center text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} PlacementOS. All rights reserved.
-            <span className="mx-2 text-primary/30">•</span>
-            <span className="group inline-flex items-center gap-1.5 transition-all duration-500 hover:text-primary">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
-              </span>
-              <span className="bg-gradient-to-r from-primary via-cyan-300 to-primary bg-[length:200%_auto] bg-clip-text text-transparent animate-[gradient-shift_3s_ease_infinite] font-semibold tracking-wide">
-                Crafted by Shan Usmani
-              </span>
-              <span className="ml-0.5 opacity-0 transition-all duration-300 group-hover:opacity-100">✦</span>
-            </span>
+          <div className="mt-10 border-t border-primary/10 pt-6 text-xs text-muted-foreground">
+            <div className="mx-auto grid max-w-7xl grid-cols-3 items-center px-4 sm:px-6">
+              <p className="text-left">&copy; {new Date().getFullYear()} PlacementOS. All rights reserved.</p>
+              <div className="text-center">
+                <span className="group inline-flex items-center justify-center gap-1.5 transition-all duration-500 hover:text-primary">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+                  </span>
+                  <span className="bg-gradient-to-r from-primary via-cyan-300 to-primary bg-[length:200%_auto] bg-clip-text text-transparent animate-[gradient-shift_3s_ease_infinite] font-semibold tracking-wide">
+                    Crafted by Shan Usmani
+                  </span>
+                  <span className="ml-0.5 opacity-0 transition-all duration-300 group-hover:opacity-100">✦</span>
+                </span>
+              </div>
+              <div />
+            </div>
           </div>
         </div>
       </footer>
