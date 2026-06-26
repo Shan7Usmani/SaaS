@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ContributionHeatmap } from "@/components/contribution-heatmap"
 import {
   ArrowRight,
   Target,
@@ -136,7 +137,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
-          Welcome{profile?.name ? `, ${profile.name}` : ""} 👋
+          Welcome{profile?.full_name ? `, ${profile.full_name}` : ""} 👋
         </h1>
         <p className="text-muted-foreground mt-1">
           Here&apos;s your placement readiness overview
@@ -251,6 +252,15 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">DSA Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ContributionHeatmap />
+        </CardContent>
+      </Card>
 
       <div>
         <h2 className="mb-4 text-xl font-semibold">Quick Actions</h2>

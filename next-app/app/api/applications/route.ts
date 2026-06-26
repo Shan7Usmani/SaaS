@@ -7,7 +7,7 @@ import { checkRateLimit, getRateLimitHeaders } from "@/lib/utils/rate-limit"
 const createSchema = z.object({
   company: z.string().min(1, "Company is required").max(200),
   role: z.string().min(1, "Role is required").max(200),
-  stage: z.enum(["applied", "oa", "interview", "offer", "rejected"]).default("applied"),
+  stage: z.enum(["applied", "oa_received", "interview", "offer", "rejected"]).default("applied"),
   notes: z.string().max(2000).optional(),
   applied_at: z.string().optional(),
 })

@@ -15,21 +15,9 @@ interface QuestionResult {
   feedback: string
 }
 
-const FALLBACK_QUESTIONS = [
-  "Explain the difference between a stack and a queue. Give real-world examples of each.",
-  "What is time complexity? Explain Big O notation with examples of O(1), O(n), and O(n²).",
-  "How does a hashmap work internally? Explain collision resolution techniques.",
-  "What is the difference between inner join, left join, and right join in SQL?",
-  "Explain the concept of recursion. When would you use it over iteration?",
-  "What is the difference between a process and a thread?",
-  "Explain how TCP three-way handshake works.",
-  "What is the difference between REST and GraphQL?",
-  "Explain the SOLID principles of object-oriented design.",
-  "What is indexing in databases and how does it improve query performance?",
-]
-
 export default function InterviewPage() {
   const [phase, setPhase] = useState<Phase>("select")
+  const [errorMessage, setErrorMessage] = useState<string>("")
   const [interviewId, setInterviewId] = useState<string | null>(null)
   const [questions, setQuestions] = useState<string[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -85,8 +73,8 @@ export default function InterviewPage() {
       const data = json.data
 
       setInterviewId(data.id)
-      const firstQuestion = data.questions?.[0] ?? FALLBACK_QUESTIONS[0]
-      setQuestions([firstQuestion])
+      const question = data.questions?.[0] ?? "Question unavailable."
+      setQuestions([question])
       setTotalQuestions(data.total_questions ?? 5)
       setCurrentIndex(0)
       setCurrentAnswer("")
@@ -94,14 +82,8 @@ export default function InterviewPage() {
       setPhase("in-progress")
       startTimer()
     } catch {
-      setInterviewId(null)
-      setQuestions(FALLBACK_QUESTIONS.slice(0, 5))
-      setTotalQuestions(5)
-      setCurrentIndex(0)
-      setCurrentAnswer("")
-      setFeedback(null)
-      setPhase("in-progress")
-      startTimer()
+      setPhase("error")
+      setErrorMessage("Failed to start interview. Please try again.")
     }
   }, [startTimer])
 
@@ -111,77 +93,45 @@ export default function InterviewPage() {
     clearTimer()
 
     try {
-      if (interviewId) {
-        const res = await fetch(`/api/interview/${interviewId}/answer`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ answer: currentAnswer, question_index: currentIndex }),
-        })
+      if (!interviewId) throw new Error("No active interview")
 
-        if (res.ok) {
-          const json = await res.json()
-          const result = json.data
+      const res = await fetch(`/api/interview/${interviewId}/answer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answer: currentAnswer, question_index: currentIndex }),
+      })
 
-          const score = result.score ?? 5
-          const fb = result.feedback ?? "Answer reviewed."
+      if (!res.ok) throw new Error("Failed to submit answer")
 
-          setFeedback({ score, feedback: fb })
-          setAnswers((prev) => [
-            ...prev,
-            {
-              question: questions[currentIndex],
-              answer: currentAnswer,
-              score,
-              feedback: fb,
-            },
-          ])
+      const json = await res.json()
+      const result = json.data
 
-          if (result.next_question) {
-            setQuestions((prev) => [...prev, result.next_question])
-          }
+      setFeedback({ score: result.score, feedback: result.feedback })
+      setAnswers((prev) => [
+        ...prev,
+        {
+          question: questions[currentIndex],
+          answer: currentAnswer,
+          score: result.score,
+          feedback: result.feedback,
+        },
+      ])
 
-          if (result.is_last) {
-            setTotalScore(result.total_score ?? 0)
-          }
-
-          setIsSubmitting(false)
-          return
-        }
+      if (result.next_question) {
+        setQuestions((prev) => [...prev, result.next_question])
       }
+
+      if (result.is_last) {
+        setTotalScore(result.total_score ?? 0)
+      }
+
+      setIsSubmitting(false)
+      return
     } catch {
-      // Fallback to client-side scoring below
+      setPhase("error")
+      setErrorMessage("Failed to submit answer. Please restart the interview.")
+      setIsSubmitting(false)
     }
-
-    const length = currentAnswer.length
-    const hasExamples =
-      currentAnswer.toLowerCase().includes("example") ||
-      currentAnswer.toLowerCase().includes("like") ||
-      currentAnswer.toLowerCase().includes("for instance")
-    const isDetailed = currentAnswer.split(" ").length > 20
-
-    let score = 5
-    if (isDetailed && hasExamples) score = 8
-    else if (isDetailed) score = 6
-    else if (hasExamples) score = 7
-    else score = 4 + Math.floor(Math.random() * 3)
-
-    let feedbackText = ""
-    if (score >= 8) {
-      feedbackText = "Excellent answer! You demonstrated clear understanding and provided relevant examples."
-    } else if (score >= 6) {
-      feedbackText = "Good understanding shown. To improve, add more specific examples."
-    } else if (score >= 4) {
-      feedbackText = "Core concept understood but lacks depth."
-    } else {
-      feedbackText = "Needs significant improvement."
-    }
-
-    setFeedback({ score, feedback: feedbackText })
-    setAnswers((prev) => [
-      ...prev,
-      { question: questions[currentIndex], answer: currentAnswer, score, feedback: feedbackText },
-    ])
-    setIsSubmitting(false)
   }, [currentAnswer, isSubmitting, clearTimer, currentIndex, questions, interviewId])
 
   const handleNext = useCallback(() => {
@@ -194,7 +144,6 @@ export default function InterviewPage() {
     } else {
       clearTimer()
       const allScores = answers.map((a) => a.score)
-      const lastScore = allScores[allScores.length - 1] ?? 0
       const total = totalScore > 0
         ? totalScore
         : Math.round(
@@ -227,7 +176,7 @@ export default function InterviewPage() {
           </p>
         </div>
         <AiErrorState
-          message="Something went wrong. Please try again."
+          message={errorMessage || "Something went wrong. Please try again."}
           onRetry={() => setPhase("select")}
         />
       </div>

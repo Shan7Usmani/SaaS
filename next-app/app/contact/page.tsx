@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { AnimatedSection } from "@/components/shared/animated-section"
 import { Mail, MapPin, MessageSquare, Clock, Send, Loader2, CheckCircle2, ArrowRight } from "lucide-react"
+import { SiteHeader } from "@/components/layout/site-header"
 
 const contactMethods = [
   {
@@ -71,22 +72,8 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-primary/10 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="bg-primary flex h-6 w-6 items-center justify-center rounded-full">
-              <span className="text-primary-foreground text-[10px] font-bold">P</span>
-            </div>
-            <span className="font-bold tracking-tight">PlacementOS</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/auth/login" className="text-muted-foreground hover:text-foreground text-sm transition-colors">Sign In</Link>
-            <Link href="/auth/register">
-              <Button size="sm">Get Started</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      {/* Header */}
+      <SiteHeader />
 
       <main>
         {/* Hero */}
@@ -94,9 +81,6 @@ export default function ContactPage() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_20%,oklch(0.72_0.18_210/0.04)_0%,transparent_50%)]" />
           <div className="relative mx-auto max-w-3xl px-4 text-center sm:px-6">
             <AnimatedSection>
-              <span className="rounded-full border border-primary/30 bg-primary/5 px-4 py-1 text-xs font-medium text-primary">
-                CONTACT
-              </span>
               <h1 className="mt-6 text-4xl font-bold tracking-tight md:text-5xl">Get in Touch</h1>
               <p className="text-muted-foreground mx-auto mt-4 max-w-xl text-lg">
                 Have a question, feedback, or just want to say hi? We&apos;d love to hear from you.

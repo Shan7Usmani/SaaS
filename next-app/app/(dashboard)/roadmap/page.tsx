@@ -1,12 +1,11 @@
 "use client"
 
 import { useState, useCallback, useEffect, useRef } from "react"
-import { useAuth } from "@/providers/auth-provider"
 import { RoadmapHeader } from "@/components/features/roadmap/roadmap-header"
 import { MonthAccordion } from "@/components/features/roadmap/month-accordion"
 import { AiLoadingState, AiRecommendationCard } from "@/components/features/ai/loading-states"
-import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useGenerateRoadmap, useMarkTopic } from "@/hooks/use-roadmap"
 
 interface Topic {
   id: string
@@ -96,36 +95,96 @@ const preBuiltRoadmaps: Record<string, Month[]> = {
   ],
 }
 
+function mapApiMonths(apiMonths: { month: number; title: string; topics: { name: string; id?: string; is_completed?: boolean }[] }[]): Month[] {
+  return apiMonths.map((m) => ({
+    month: m.month,
+    title: m.title,
+    topics: m.topics.map((t) => ({
+      id: t.id ?? `topic-${m.month}-${t.name.toLowerCase().replace(/\s+/g, "-")}`,
+      name: t.name,
+      completed: t.is_completed ?? false,
+    })),
+  }))
+}
+
 export default function RoadmapPage() {
-  const { profile } = useAuth()
+  const generateRoadmap = useGenerateRoadmap()
+  const markTopic = useMarkTopic()
+  const [roadmapId, setRoadmapId] = useState<string | null>(null)
   const [selectedCompany, setSelectedCompany] = useState("Amazon SDE-1")
   const [isGenerating, setIsGenerating] = useState(false)
   const [months, setMonths] = useState<Month[]>(preBuiltRoadmaps["Amazon SDE-1"])
-  const [showRegenerate, setShowRegenerate] = useState(false)
 
   const totalTopics = months.reduce((sum, m) => sum + m.topics.length, 0)
   const completedTopics = months.reduce((sum, m) => sum + m.topics.filter((t) => t.completed).length, 0)
 
+  const loadRoadmap = useCallback((company: string) => {
+    setIsGenerating(true)
+    generateRoadmap.mutate(
+      { target_company: company },
+      {
+        onSuccess: (data) => {
+          setRoadmapId(data.id)
+          setMonths(mapApiMonths(data.months))
+          setIsGenerating(false)
+        },
+        onError: () => {
+          const template = preBuiltRoadmaps[company] ?? preBuiltRoadmaps["Amazon SDE-1"]
+          setMonths(template.map((m) => ({ ...m, topics: m.topics.map((t) => ({ ...t, completed: false })) })))
+          setIsGenerating(false)
+        },
+      }
+    )
+  }, [generateRoadmap])
+
   const handleCompanyChange = useCallback((company: string | null) => {
     if (!company) return
     setSelectedCompany(company)
-    setIsGenerating(true)
-    setTimeout(() => {
-      const roadmap = preBuiltRoadmaps[company] ?? preBuiltRoadmaps["Amazon SDE-1"]
-      setMonths(roadmap.map((m) => ({ ...m, topics: m.topics.map((t) => ({ ...t, completed: false })) })))
-      setIsGenerating(false)
-    }, 1500)
-  }, [])
+    setRoadmapId(null)
+    loadRoadmap(company)
+  }, [loadRoadmap])
 
   const handleToggleTopic = useCallback((monthIndex: number, topicId: string) => {
+    if (!roadmapId) {
+      setMonths((prev) =>
+        prev.map((m, mi) =>
+          mi === monthIndex
+            ? { ...m, topics: m.topics.map((t) => (t.id === topicId ? { ...t, completed: !t.completed } : t)) }
+            : m
+        )
+      )
+      return
+    }
+
+    const month = months[monthIndex]
+    const topic = month?.topics.find((t) => t.id === topicId)
+    if (!topic) return
+
+    const newCompleted = !topic.completed
+
     setMonths((prev) =>
       prev.map((m, mi) =>
         mi === monthIndex
-          ? { ...m, topics: m.topics.map((t) => (t.id === topicId ? { ...t, completed: !t.completed } : t)) }
+          ? { ...m, topics: m.topics.map((t) => (t.id === topicId ? { ...t, completed: newCompleted } : t)) }
           : m
       )
     )
-  }, [])
+
+    markTopic.mutate(
+      { roadmapId, topicId, isCompleted: newCompleted },
+      {
+        onError: () => {
+          setMonths((prev) =>
+            prev.map((m, mi) =>
+              mi === monthIndex
+                ? { ...m, topics: m.topics.map((t) => (t.id === topicId ? { ...t, completed: !newCompleted } : t)) }
+                : m
+            )
+          )
+        },
+      }
+    )
+  }, [roadmapId, months, markTopic])
 
   const [genStage, setGenStage] = useState(0)
   const genIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -141,13 +200,9 @@ export default function RoadmapPage() {
   }, [isGenerating])
 
   const handleRegenerate = useCallback(() => {
-    setShowRegenerate(true)
-    setIsGenerating(true)
-    setTimeout(() => {
-      setIsGenerating(false)
-      setShowRegenerate(false)
-    }, 2000)
-  }, [])
+    if (!selectedCompany) return
+    loadRoadmap(selectedCompany)
+  }, [selectedCompany, loadRoadmap])
 
   return (
     <div className="space-y-6">

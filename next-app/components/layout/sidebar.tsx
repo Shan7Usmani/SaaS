@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Route,
   Code2,
+  GitFork,
   GraduationCap,
   FileText,
   Briefcase,
@@ -21,7 +22,8 @@ import {
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/roadmap", label: "Roadmap", icon: Route },
-  { href: "/dsa", label: "DSA Tracker", icon: Code2 },
+  { href: "/dsa",        label: "DSA Tracker", icon: Code2 },
+  { href: "/github",     label: "GitHub",      icon: GitFork },
   { href: "/resume", label: "Resume", icon: FileText },
   { href: "/interview", label: "Interview", icon: GraduationCap },
   { href: "/applications", label: "Applications", icon: CalendarCheck },

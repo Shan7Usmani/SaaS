@@ -1,11 +1,9 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { ResumeUploader } from "@/components/features/resume/resume-uploader"
 import { ResumeResults } from "@/components/features/resume/resume-results"
 import { AiLoadingState, AiErrorState } from "@/components/features/ai/loading-states"
-import { ScoreDisplay } from "@/components/features/ai/score-display"
-import { createClient } from "@/lib/supabase/client"
 
 type AnalysisResult = {
   score: number
@@ -26,6 +24,7 @@ export default function ResumePage() {
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [analysisStage, setAnalysisStage] = useState(0)
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const stages = [
     "Extracting text from PDF",
@@ -33,6 +32,52 @@ export default function ResumePage() {
     "Calculating ATS score",
     "Generating improvement suggestions",
   ]
+
+  const pollAnalysis = useCallback(async (resumeId: string) => {
+    pollingRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/resume/${resumeId}`)
+        if (!res.ok) return
+        const json = await res.json()
+        const data = json.data
+
+        if (data.status === "completed") {
+          if (pollingRef.current) clearInterval(pollingRef.current)
+          setResult({
+            score: data.score.overall ?? 0,
+            ats: data.score.ats ?? 0,
+            keywords: data.score.keywords ?? 0,
+            projects: data.score.projects ?? 0,
+            skills: data.score.skills ?? 0,
+            missing: data.missing_keywords ?? [],
+            suggestions: (data.suggestions ?? []).map(
+              (s: { category: string; text?: string; issue?: string; fix?: string; impact?: string }) => ({
+                priority: "medium" as const,
+                category: s.category,
+                issue: s.text ?? s.issue ?? "",
+                fix: s.fix ?? s.text ?? "",
+                impact: s.impact ?? "",
+              })
+            ),
+            weakSections: data.weak_sections ?? [],
+          })
+          setPageState("complete")
+        } else if (data.status === "failed") {
+          if (pollingRef.current) clearInterval(pollingRef.current)
+          setError("AI analysis failed. Please try again.")
+          setPageState("error")
+        }
+      } catch {
+        // poll again
+      }
+    }, 2000)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current)
+    }
+  }, [])
 
   const handleFileSelected = useCallback(async (f: File) => {
     setFile(f)
@@ -65,57 +110,17 @@ export default function ResumePage() {
       })
 
       if (!analyzeRes.ok) {
-        throw new Error("AI analysis failed")
+        throw new Error("AI analysis failed to start")
       }
 
-      const { data: analysisData } = await analyzeRes.json()
-
-      setResult({
-        score: analysisData.score.total,
-        ats: analysisData.score.ats,
-        keywords: analysisData.score.keywords,
-        projects: analysisData.score.projects,
-        skills: analysisData.score.skills,
-        missing: analysisData.missing_keywords ?? [],
-        suggestions: (analysisData.suggestions ?? []).map(
-          (s: { category: string; text: string }) => ({
-            priority: "medium" as const,
-            category: s.category,
-            issue: s.text,
-            fix: s.text,
-            impact: "",
-          })
-        ),
-        weakSections: analysisData.weak_sections ?? [],
-      })
-      setPageState("complete")
-    } catch {
-      setResult({
-        score: 73,
-        ats: 68,
-        keywords: 55,
-        projects: 80,
-        skills: 65,
-        missing: ["Git", "Docker", "SQL", "System Design", "CI/CD"],
-        suggestions: [
-          { priority: "high", category: "keywords", issue: "Missing Git in skills", fix: "Add Git to your Technical Skills section. List specific commands and workflows you're familiar with.", impact: "+15 ATS points" },
-          { priority: "high", category: "keywords", issue: "No Docker or containerization mention", fix: "Include Docker if you've used it. Even basic familiarity adds keywords for DevOps-aware roles.", impact: "+10 ATS points" },
-          { priority: "medium", category: "projects", issue: "Weak project descriptions", fix: "Rewrite project descriptions using STAR format: Situation, Task, Action, Result. Quantify impacts with metrics.", impact: "+8 ATS points" },
-          { priority: "medium", category: "content", issue: "No technical skills section", fix: "Add a dedicated Technical Skills section before Projects. Group by category (Languages, Frameworks, Tools).", impact: "+12 ATS points" },
-          { priority: "low", category: "format", issue: "Missing link to GitHub profile", fix: "Add your GitHub profile URL to the contact section. Ensure it has recent activity.", impact: "+5 ATS points" },
-        ],
-        weakSections: [
-          "Project descriptions are too brief — add bullet points with metrics",
-          "Missing technical keywords for ATS matching",
-          "No mention of version control or collaboration tools",
-          "Education section lacks relevant coursework",
-        ],
-      })
-      setPageState("complete")
+      pollAnalysis(resumeId)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong")
+      setPageState("error")
     } finally {
       clearInterval(stageInterval)
     }
-  }, [])
+  }, [pollAnalysis])
 
   const handleReset = useCallback(() => {
     setPageState("idle")

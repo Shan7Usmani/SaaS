@@ -22,6 +22,7 @@ import {
   LayoutDashboard,
   Route,
   Code2,
+  GitFork,
   GraduationCap,
   FileText,
   Briefcase,
@@ -36,6 +37,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/roadmap", label: "Roadmap", icon: Route },
   { href: "/dsa", label: "DSA Tracker", icon: Code2 },
+  { href: "/github", label: "GitHub", icon: GitFork },
   { href: "/resume", label: "Resume", icon: FileText },
   { href: "/interview", label: "Interview", icon: GraduationCap },
   { href: "/applications", label: "Applications", icon: CalendarCheck },
@@ -47,8 +49,8 @@ export function MobileNav() {
   const pathname = usePathname()
   const { user, profile, signOut } = useAuth()
 
-  const initials = profile?.name
-    ? profile.name
+  const initials = profile?.full_name
+    ? profile.full_name
         .split(" ")
         .map((n) => n[0])
         .join("")
@@ -110,7 +112,7 @@ export function MobileNav() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48 border-primary/20">
           <div className="px-2 py-1.5 text-sm font-medium text-foreground">
-            {profile?.name ?? user?.email}
+            {profile?.full_name ?? user?.email}
           </div>
           <DropdownMenuSeparator />
           <Link href="/settings">

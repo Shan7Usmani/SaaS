@@ -86,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function signOut() {
     await supabase.auth.signOut()
     setProfile(null)
+    window.location.href = "/"
   }
 
   async function refreshProfile() {

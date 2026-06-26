@@ -5,7 +5,7 @@ import { handleApiError, unauthorized } from "@/lib/utils/errors"
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/utils/rate-limit"
 
 const profileUpdateSchema = z.object({
-  name: z.string().min(2).max(100).optional(),
+  full_name: z.string().min(2).max(100).optional(),
   college: z.string().min(2).max(200).optional(),
   branch: z.string().min(2).max(100).optional(),
   current_year: z.number().int().min(1).max(5).optional(),
@@ -14,6 +14,8 @@ const profileUpdateSchema = z.object({
   dsa_level: z.enum(["beginner", "intermediate", "advanced"]).optional(),
   preferred_role: z.enum(["swe", "data_analyst", "ai_engineer", "web_dev"]).optional(),
   onboarding_completed: z.boolean().optional(),
+  auth_provider: z.string().optional(),
+  auth_id: z.string().optional(),
 })
 
 export async function GET() {

@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useAuth } from "@/providers/auth-provider"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -20,19 +20,27 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { useTheme } from "next-themes"
+import { useUpdateProfile } from "@/hooks/use-profile"
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog"
 
 export default function SettingsPage() {
   const { profile } = useAuth()
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const updateProfile = useUpdateProfile()
 
-  useEffect(() => { setMounted(true) }, [])
-
-  const [profileForm, setProfileForm] = useState({
-    name: profile?.name || "",
-    email: profile?.email || "",
-  })
+  const [profileForm, setProfileForm] = useState(() => ({
+    full_name: profile?.full_name ?? "",
+    email: profile?.email ?? "",
+  }))
 
   const [notifications, setNotifications] = useState({
     emailReminders: true,
@@ -41,11 +49,14 @@ export default function SettingsPage() {
     weeklyDigest: false,
   })
 
-  const handleSaveProfile = async () => {
-    setSaving(true)
-    await new Promise((r) => setTimeout(r, 1000))
-    toast.success("Profile updated successfully")
-    setSaving(false)
+  const handleSaveProfile = () => {
+    updateProfile.mutate(
+      { full_name: profileForm.full_name },
+      {
+        onSuccess: () => toast.success("Profile updated successfully"),
+        onError: (err) => toast.error(err.message),
+      }
+    )
   }
 
   return (
@@ -75,10 +86,10 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <Label>Full Name</Label>
               <Input
-                value={profileForm.name}
-                onChange={(e) =>
-                  setProfileForm((p) => ({ ...p, name: e.target.value }))
-                }
+                value={profileForm.full_name}
+                  onChange={(e) =>
+                    setProfileForm((p) => ({ ...p, full_name: e.target.value }))
+                  }
               />
             </div>
             <div className="space-y-2">
@@ -97,8 +108,8 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="flex justify-end">
-            <Button onClick={handleSaveProfile} disabled={saving}>
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
+              {updateProfile.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <Save className="mr-2 h-4 w-4" />
               Save Changes
             </Button>
@@ -122,7 +133,7 @@ export default function SettingsPage() {
             <Label>Theme</Label>
             <div className="flex gap-2">
               <Button
-                variant={mounted && theme === "light" ? "default" : "outline"}
+                variant={theme === "light" ? "default" : "outline"}
                 className="flex-1 gap-2"
                 onClick={() => setTheme("light")}
               >
@@ -130,7 +141,7 @@ export default function SettingsPage() {
                 Light
               </Button>
               <Button
-                variant={mounted && theme === "dark" ? "default" : "outline"}
+                variant={theme === "dark" ? "default" : "outline"}
                 className="flex-1 gap-2"
                 onClick={() => setTheme("dark")}
               >
@@ -138,7 +149,7 @@ export default function SettingsPage() {
                 Dark
               </Button>
               <Button
-                variant={mounted && theme === "system" ? "default" : "outline"}
+                variant={theme === "system" ? "default" : "outline"}
                 className="flex-1 gap-2"
                 onClick={() => setTheme("system")}
               >
@@ -226,9 +237,44 @@ export default function SettingsPage() {
                 Clear all your roadmap, interview, and application data
               </p>
             </div>
-            <Button variant="outline" size="sm" className="text-red-500 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950">
-              Reset
-            </Button>
+            <Dialog>
+              <DialogTrigger
+                render={
+                  <Button variant="outline" size="sm" className="text-red-500 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950">
+                    Reset
+                  </Button>
+                }
+              />
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Reset all progress?</DialogTitle>
+                  <DialogDescription>
+                    This will clear your DSA sheet progress and streak. This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <DialogClose
+                    render={<Button variant="outline" size="sm">Cancel</Button>}
+                  />
+                  <DialogClose
+                    render={
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          localStorage.removeItem("dsa-progress")
+                          localStorage.removeItem("dsa-streak")
+                          localStorage.removeItem("dsa-last-active")
+                          toast.success("Progress reset successfully")
+                        }}
+                      >
+                        Reset
+                      </Button>
+                    }
+                  />
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
           <div className="flex items-center justify-between rounded-lg border border-red-200 p-3 dark:border-red-900">
             <div>

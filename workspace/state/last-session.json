@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "last_opened": "2026-06-09T02:42:00Z",
+  "agents_active": ["pm", "architect", "frontend", "backend", "ai-engineer", "qa", "devops"],
+  "open_files": [
+    "/workspace/TASK_QUEUE.md",
+    "/workspace/CURRENT_SPRINT.md"
+  ],
+  "sprint": "Sprint 4"
+}

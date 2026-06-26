@@ -15,8 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Loader2, Check } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { createClient } from "@/lib/supabase/client"
+import { toast } from "sonner"
 
 const colleges = [
   "IIT Bombay",
@@ -126,9 +125,8 @@ export default function OnboardingPage() {
     dsa_level: "",
     preferred_role: "",
   })
-  const { user, refreshProfile } = useAuth()
+  const { refreshProfile } = useAuth()
   const router = useRouter()
-  const supabase = createClient()
 
   function update(field: string, value: string | string[]) {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -144,25 +142,45 @@ export default function OnboardingPage() {
   }
 
   async function handleSubmit() {
-    if (!user) return
     setIsLoading(true)
 
-    await supabase.from("profiles").upsert({
-      id: user.id,
-      name: formData.name,
-      college: formData.college,
-      branch: formData.branch,
-      year: formData.year,
-      cgpa: formData.cgpa ? Number(formData.cgpa) : null,
-      target_companies: formData.target_companies,
-      dsa_level: formData.dsa_level,
-      preferred_role: formData.preferred_role,
-      onboarding_completed: true,
-    })
+    const yearMap: Record<string, number> = {
+      "1st Year": 1, "2nd Year": 2, "3rd Year": 3, "4th Year": 4, "Graduated": 5,
+    }
 
-    await refreshProfile()
-    setIsLoading(false)
-    router.push("/dashboard")
+    const roleMap: Record<string, string> = {
+      swe: "swe", data: "data_analyst", ai: "ai_engineer", web: "web_dev",
+    }
+
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: formData.name,
+          college: formData.college,
+          branch: formData.branch,
+          current_year: formData.year ? yearMap[formData.year] : undefined,
+          cgpa: formData.cgpa ? Number(formData.cgpa) : undefined,
+          target_companies: formData.target_companies,
+          dsa_level: formData.dsa_level || undefined,
+          preferred_role: formData.preferred_role ? roleMap[formData.preferred_role] : undefined,
+          onboarding_completed: true,
+        }),
+      })
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? "Failed to save profile")
+      }
+
+      await refreshProfile()
+      router.push("/dashboard")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to complete onboarding")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const progress = ((step + 1) / steps.length) * 100

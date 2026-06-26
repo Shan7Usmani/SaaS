@@ -16,8 +16,8 @@ import Link from "next/link"
 export function Header() {
   const { user, profile, signOut } = useAuth()
 
-  const initials = profile?.name
-    ? profile.name
+  const initials = profile?.full_name
+    ? profile.full_name
         .split(" ")
         .map((n) => n[0])
         .join("")
@@ -41,7 +41,7 @@ export function Header() {
           </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48 border-primary/20">
           <div className="px-2 py-1.5 text-sm font-medium text-foreground">
-            {profile?.name ?? user?.email}
+            {profile?.full_name ?? user?.email}
           </div>
           <DropdownMenuSeparator />
           <Link href="/settings">

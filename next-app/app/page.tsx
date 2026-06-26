@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { AnimatedSection } from "@/components/shared/animated-section"
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer"
 import { cn } from "@/lib/utils"
+import { SiteHeader } from "@/components/layout/site-header"
 import {
   Target,
   FileText,
@@ -18,7 +19,6 @@ import {
   Quote,
   Mail,
   MapPin,
-  ChevronRight,
 } from "lucide-react"
 
 function FloatingShape({
@@ -186,40 +186,7 @@ export default function LandingPage() {
       </div>
 
       {/* Header */}
-      <header className="fixed top-0 z-50 w-full border-b border-primary/10 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="bg-primary flex h-7 w-7 items-center justify-center rounded-full">
-              <span className="text-primary-foreground text-xs font-bold">P</span>
-            </div>
-            <span className="font-bold tracking-tight text-lg">PlacementOS</span>
-          </Link>
-          <nav className="hidden items-center gap-6 md:flex">
-            <Link href="/" className="text-muted-foreground hover:text-foreground text-sm transition-colors">
-              Home
-            </Link>
-            <Link href="/about" className="text-muted-foreground hover:text-foreground text-sm transition-colors">
-              About
-            </Link>
-            <Link href="/contact" className="text-muted-foreground hover:text-foreground text-sm transition-colors">
-              Contact
-            </Link>
-          </nav>
-          <div className="flex items-center gap-3">
-            <Link href="/auth/login">
-              <Button variant="ghost" size="sm" className="text-sm">
-                Sign In
-              </Button>
-            </Link>
-            <Link href="/auth/register">
-              <Button size="sm" className="text-sm shadow-lg shadow-primary/20">
-                Get Started
-                <ChevronRight className="ml-1 h-3.5 w-3.5" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="relative z-10 flex-1">
         {/* Hero */}
@@ -437,6 +404,7 @@ export default function LandingPage() {
               </p>
               <div className="flex flex-col gap-2">
                 <Link href="/" className="text-sm hover:text-foreground transition-colors">Home</Link>
+                <Link href="/features" className="text-sm hover:text-foreground transition-colors">Features</Link>
                 <Link href="/about" className="text-sm hover:text-foreground transition-colors">About</Link>
                 <Link href="/contact" className="text-sm hover:text-foreground transition-colors">Contact</Link>
               </div>

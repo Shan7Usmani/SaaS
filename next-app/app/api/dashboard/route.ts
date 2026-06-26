@@ -74,7 +74,7 @@ export async function GET() {
 
     const stageCounts: Record<string, number> = {
       applied: 0,
-      oa: 0,
+      oa_received: 0,
       interview: 0,
       offer: 0,
       rejected: 0,

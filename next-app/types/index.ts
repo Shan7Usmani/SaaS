@@ -1,7 +1,7 @@
 export interface UserProfile {
   id: string
   email: string
-  name: string | null
+  full_name: string | null
   college: string | null
   branch: string | null
   year: string | null
@@ -11,6 +11,8 @@ export interface UserProfile {
   preferred_role: "swe" | "data" | "ai" | "web" | null
   avatar_url: string | null
   onboarding_completed: boolean
+  auth_provider: string
+  auth_id: string | null
   created_at: string
 }
 
@@ -85,7 +87,7 @@ export interface Application {
   user_id: string
   company: string
   role: string
-  stage: "applied" | "oa" | "interview" | "offer" | "rejected"
+  stage: "applied" | "oa_received" | "interview" | "offer" | "rejected"
   notes: string | null
   applied_date: string
   updated_at: string
@@ -119,7 +121,7 @@ export interface DashboardData {
     total: number
     stages: {
       applied: number
-      oa: number
+      oa_received: number
       interview: number
       offer: number
       rejected: number

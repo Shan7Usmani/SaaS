@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -24,64 +24,31 @@ import {
   Plus,
   Building2,
   CalendarDays,
-  ExternalLink,
   Trash2,
+  Loader2,
 } from "lucide-react"
+import { toast } from "sonner"
+import {
+  useApplications,
+  useCreateApplication,
+  useUpdateApplication,
+  useDeleteApplication,
+} from "@/hooks/use-applications"
 
 const stages = [
   { value: "applied", label: "Applied", color: "bg-blue-500" },
-  { value: "oa", label: "OA Received", color: "bg-amber-500" },
+  { value: "oa_received", label: "OA Received", color: "bg-amber-500" },
   { value: "interview", label: "Interview", color: "bg-violet-500" },
   { value: "offer", label: "Offer", color: "bg-emerald-500" },
   { value: "rejected", label: "Rejected", color: "bg-red-500" },
 ] as const
 
-interface Application {
-  id: string
-  company: string
-  role: string
-  stage: (typeof stages)[number]["value"]
-  applied_date: string
-  notes: string
-}
-
-const initialApps: Application[] = [
-  {
-    id: "1",
-    company: "Amazon",
-    role: "SDE-1",
-    stage: "interview",
-    applied_date: "2026-05-15",
-    notes: "Online assessment completed. Waiting for interview.",
-  },
-  {
-    id: "2",
-    company: "Microsoft",
-    role: "Software Engineer",
-    stage: "oa",
-    applied_date: "2026-05-20",
-    notes: "OA received, need to complete by June 5.",
-  },
-  {
-    id: "3",
-    company: "Google",
-    role: "SWE Intern",
-    stage: "applied",
-    applied_date: "2026-05-25",
-    notes: "Application submitted via referral.",
-  },
-  {
-    id: "4",
-    company: "TCS",
-    role: "Digital",
-    stage: "offer",
-    applied_date: "2026-04-10",
-    notes: "Offer received! Decision pending.",
-  },
-]
-
 export default function ApplicationsPage() {
-  const [applications, setApplications] = useState(initialApps)
+  const { data: applications = [], isLoading, error } = useApplications()
+  const createMutation = useCreateApplication()
+  const updateMutation = useUpdateApplication()
+  const deleteMutation = useDeleteApplication()
+
   const [isOpen, setIsOpen] = useState(false)
   const [newApp, setNewApp] = useState({
     company: "",
@@ -93,27 +60,46 @@ export default function ApplicationsPage() {
 
   const addApplication = () => {
     if (!newApp.company || !newApp.role) return
-    setApplications((prev) => [
-      ...prev,
-      { ...newApp, id: Date.now().toString() },
-    ])
-    setNewApp({
-      company: "",
-      role: "",
-      stage: "applied",
-      applied_date: new Date().toISOString().split("T")[0],
-      notes: "",
-    })
-    setIsOpen(false)
+    createMutation.mutate(
+      {
+        company: newApp.company,
+        role: newApp.role,
+        stage: newApp.stage,
+        notes: newApp.notes || undefined,
+        applied_at: newApp.applied_date,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Application added")
+          setNewApp({
+            company: "",
+            role: "",
+            stage: "applied",
+            applied_date: new Date().toISOString().split("T")[0],
+            notes: "",
+          })
+          setIsOpen(false)
+        },
+        onError: (err) => {
+          toast.error(err.message)
+        },
+      }
+    )
   }
 
   const deleteApplication = (id: string) => {
-    setApplications((prev) => prev.filter((a) => a.id !== id))
+    deleteMutation.mutate(id, {
+      onSuccess: () => toast.success("Application deleted"),
+      onError: (err) => toast.error(err.message),
+    })
   }
 
   const updateStage = (id: string, stage: (typeof stages)[number]["value"]) => {
-    setApplications((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, stage } : a))
+    updateMutation.mutate(
+      { id, data: { stage } },
+      {
+        onError: (err) => toast.error(err.message),
+      }
     )
   }
 
@@ -121,6 +107,27 @@ export default function ApplicationsPage() {
     ...stage,
     count: applications.filter((a) => a.stage === stage.value).length,
   }))
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold tracking-tight">Application Tracker</h1>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-red-500">Failed to load applications. Please try again.</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -213,8 +220,8 @@ export default function ApplicationsPage() {
                   }
                 />
               </div>
-              <Button className="w-full" onClick={addApplication}>
-                Add
+              <Button className="w-full" onClick={addApplication} disabled={createMutation.isPending}>
+                {createMutation.isPending ? "Adding..." : "Add"}
               </Button>
             </div>
           </DialogContent>
