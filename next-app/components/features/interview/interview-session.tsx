@@ -6,19 +6,18 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Clock, Send, Loader2, AlertTriangle } from "lucide-react"
+import { Send, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface InterviewSessionProps {
   question: { question: string }
   questionNumber: number
   totalQuestions: number
-  timeLeft: number
   answer: string
   isSubmitting: boolean
   onAnswerChange: (value: string) => void
   onSubmit: () => void
-  feedback?: { score: number; feedback: string } | null
+  feedback?: { score: number; feedback: string; suggested_answer?: string } | null
   onNext: () => void
 }
 
@@ -26,7 +25,6 @@ export function InterviewSession({
   question,
   questionNumber,
   totalQuestions,
-  timeLeft,
   answer,
   isSubmitting,
   onAnswerChange,
@@ -56,21 +54,12 @@ export function InterviewSession({
     [isSubmitting, answer, feedback, onSubmit, onNext]
   )
 
-  const timerColor =
-    timeLeft <= 10 ? "text-red-500" : timeLeft <= 20 ? "text-amber-500" : "text-foreground"
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Badge variant="outline" className="text-sm">
           Question {questionNumber} of {totalQuestions}
         </Badge>
-        <div className="flex items-center gap-2">
-          <Clock className={cn("h-4 w-4", timerColor)} />
-          <span className={cn("font-mono font-medium tabular-nums", timerColor)}>
-            {timeLeft}s
-          </span>
-        </div>
       </div>
 
       <Progress value={(questionNumber / totalQuestions) * 100} className="h-1.5" />
@@ -91,11 +80,7 @@ export function InterviewSession({
                 onKeyDown={handleKeyDown}
               />
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <AlertTriangle className="h-3 w-3" />
-                  Be specific and provide examples where possible
-                  <span className="ml-2 font-mono">{answer.length} chars</span>
-                </div>
+                <div />
                 <Button
                   onClick={onSubmit}
                   disabled={isSubmitting || !answer.trim()}
@@ -115,7 +100,7 @@ export function InterviewSession({
                 <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Your answer
                 </p>
-                <p className="text-sm leading-relaxed">{answer}</p>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{answer}</p>
               </div>
               <div className="flex items-center gap-3 rounded-lg border p-4">
                 <div
@@ -135,6 +120,16 @@ export function InterviewSession({
                   <p className="text-muted-foreground text-sm">{feedback.feedback}</p>
                 </div>
               </div>
+              {(feedback as { suggested_answer?: string }).suggested_answer && (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/50">
+                  <p className="mb-1 text-xs font-medium text-emerald-700 uppercase tracking-wider dark:text-emerald-300">
+                    Suggested answer
+                  </p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap text-emerald-900 dark:text-emerald-100">
+                    {(feedback as { suggested_answer?: string }).suggested_answer}
+                  </p>
+                </div>
+              )}
               <div className="flex justify-end">
                 <Button onClick={onNext}>
                   {questionNumber < totalQuestions ? "Next Question" : "See Results"}

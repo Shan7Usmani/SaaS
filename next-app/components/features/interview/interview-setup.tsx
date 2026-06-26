@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { GraduationCap, MessageSquare, ArrowRight, Clock, Users } from "lucide-react"
+import { GraduationCap, MessageSquare, ArrowRight, Users } from "lucide-react"
 
 interface InterviewSetupProps {
   onStart: (type: "technical" | "hr") => void
@@ -24,10 +24,7 @@ export function InterviewSetup({ onStart }: InterviewSetupProps) {
           <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
             5 DSA & CS fundamentals questions with timed answers
           </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-3">
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Clock className="h-3 w-3" /> 60s per question
-            </Badge>
+           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <Badge variant="secondary" className="flex items-center gap-1">
               <Users className="h-3 w-3" /> AI evaluated
             </Badge>
@@ -39,26 +36,27 @@ export function InterviewSetup({ onStart }: InterviewSetupProps) {
         </CardContent>
       </Card>
 
-      <Card className="opacity-50 cursor-not-allowed">
+      <Card
+        className="hover:border-primary/50 group cursor-pointer transition-all"
+        onClick={() => onStart("hr")}
+      >
         <CardContent className="flex flex-col items-center p-8 text-center">
-          <div className="bg-green-100 mb-4 rounded-full p-4 dark:bg-green-900">
+          <div className="bg-green-100 mb-4 rounded-full p-4 transition-colors group-hover:bg-green-200 dark:bg-green-900 dark:group-hover:bg-green-800">
             <MessageSquare className="h-10 w-10 text-green-600 dark:text-green-300" />
           </div>
           <CardTitle className="text-xl">HR Interview</CardTitle>
           <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
             Behavioral questions with confidence and communication scoring
           </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-3">
+           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <Badge variant="secondary" className="flex items-center gap-1">
-              <Clock className="h-3 w-3" /> No time limit
-            </Badge>
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Users className="h-3 w-3" /> Confidence scored
+              <Users className="h-3 w-3" /> AI evaluated
             </Badge>
           </div>
-          <Badge variant="outline" className="mt-6">
-            Coming Soon
-          </Badge>
+          <Button className="mt-6 w-full" size="lg">
+            Start HR
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
         </CardContent>
       </Card>
     </div>

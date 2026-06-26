@@ -15,4 +15,3 @@ CREATE TABLE interviews (
 );
 
 CREATE INDEX interviews_user_id_idx ON interviews (user_id);
-CREATE INDEX interviews_created_at_idx ON interviews (user_id, created_at);

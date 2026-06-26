@@ -9,7 +9,7 @@ const providerMap: Record<
 > = {
   roadmap: { primary: "gemini", fallback: "openai" },
   resume: { primary: "gemini", fallback: "openai" },
-  interview: { primary: "openai", fallback: "gemini", model: "gpt-4o-mini" },
+  interview: { primary: "openai", fallback: "gemini" },
   dsa: { primary: "gemini", fallback: "openai" },
   "code-review": { primary: "gemini", fallback: "openai" },
 }

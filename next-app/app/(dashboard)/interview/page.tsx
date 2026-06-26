@@ -17,6 +17,7 @@ interface QuestionResult {
 
 export default function InterviewPage() {
   const [phase, setPhase] = useState<Phase>("select")
+  const [interviewType, setInterviewType] = useState<"technical" | "hr">("technical")
   const [errorMessage, setErrorMessage] = useState<string>("")
   const [interviewId, setInterviewId] = useState<string | null>(null)
   const [questions, setQuestions] = useState<string[]>([])
@@ -24,47 +25,34 @@ export default function InterviewPage() {
   const [totalQuestions, setTotalQuestions] = useState(0)
   const [answers, setAnswers] = useState<QuestionResult[]>([])
   const [currentAnswer, setCurrentAnswer] = useState("")
-  const [timeLeft, setTimeLeft] = useState(60)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [feedback, setFeedback] = useState<{ score: number; feedback: string } | null>(null)
+  const [feedback, setFeedback] = useState<{ score: number; feedback: string; suggested_answer?: string } | null>(null)
   const [totalScore, setTotalScore] = useState(0)
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [loadingStage, setLoadingStage] = useState(1)
+  const answersRef = useRef(answers)
 
-  const clearTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current)
-      timerRef.current = null
-    }
-  }, [])
-
-  const startTimer = useCallback(() => {
-    clearTimer()
-    setTimeLeft(60)
-    timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearTimer()
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-  }, [clearTimer])
+  answersRef.current = answers
 
   useEffect(() => {
-    return () => clearTimer()
-  }, [clearTimer])
+    if (phase !== "loading") return
+    if (loadingStage >= 3) return
+    const t = setTimeout(() => setLoadingStage((s) => s + 1), 800)
+    return () => clearTimeout(t)
+  }, [phase, loadingStage])
 
   const handleStart = useCallback(async (type: "technical" | "hr") => {
     setPhase("loading")
+    setLoadingStage(1)
+    setInterviewType(type)
     setInterviewId(null)
     setAnswers([])
+    setTotalScore(0)
 
     try {
       const res = await fetch("/api/interview/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, question_count: 5, timer_seconds: 60 }),
+        body: JSON.stringify({ type, question_count: 5, timer_seconds: 0 }),
       })
 
       if (!res.ok) throw new Error("Failed to start interview")
@@ -80,17 +68,17 @@ export default function InterviewPage() {
       setCurrentAnswer("")
       setFeedback(null)
       setPhase("in-progress")
-      startTimer()
     } catch {
       setPhase("error")
       setErrorMessage("Failed to start interview. Please try again.")
     }
-  }, [startTimer])
+  }, [])
 
   const handleSubmit = useCallback(async () => {
-    if (!currentAnswer.trim() || isSubmitting) return
+    if (isSubmitting) return
+    const answer = currentAnswer.trim() || "No answer provided."
+    if (!answer) return
     setIsSubmitting(true)
-    clearTimer()
 
     try {
       if (!interviewId) throw new Error("No active interview")
@@ -98,7 +86,7 @@ export default function InterviewPage() {
       const res = await fetch(`/api/interview/${interviewId}/answer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answer: currentAnswer, question_index: currentIndex }),
+        body: JSON.stringify({ answer, question_index: currentIndex }),
       })
 
       if (!res.ok) throw new Error("Failed to submit answer")
@@ -106,7 +94,7 @@ export default function InterviewPage() {
       const json = await res.json()
       const result = json.data
 
-      setFeedback({ score: result.score, feedback: result.feedback })
+      setFeedback({ score: result.score, feedback: result.feedback, suggested_answer: result.suggested_answer })
       setAnswers((prev) => [
         ...prev,
         {
@@ -126,13 +114,12 @@ export default function InterviewPage() {
       }
 
       setIsSubmitting(false)
-      return
     } catch {
       setPhase("error")
       setErrorMessage("Failed to submit answer. Please restart the interview.")
       setIsSubmitting(false)
     }
-  }, [currentAnswer, isSubmitting, clearTimer, currentIndex, questions, interviewId])
+  }, [currentAnswer, isSubmitting, currentIndex, questions, interviewId])
 
   const handleNext = useCallback(() => {
     const isLast = currentIndex >= totalQuestions - 1 || currentIndex >= questions.length - 1
@@ -140,19 +127,16 @@ export default function InterviewPage() {
       setCurrentIndex((prev) => prev + 1)
       setCurrentAnswer("")
       setFeedback(null)
-      startTimer()
     } else {
-      clearTimer()
-      const allScores = answers.map((a) => a.score)
-      const total = totalScore > 0
-        ? totalScore
-        : Math.round(
-            (allScores.reduce((sum, s) => sum + s, 0) / (allScores.length * 10)) * 100
-          )
+      const currentAnswers = answersRef.current
+      const allScores = currentAnswers.map((a) => a.score)
+      const total = Math.round(
+        (allScores.reduce((sum, s) => sum + s, 0) / (Math.max(allScores.length, 1) * 10)) * 100
+      )
       setTotalScore(total)
       setPhase("completed")
     }
-  }, [currentIndex, totalQuestions, questions.length, answers, startTimer, clearTimer, totalScore])
+  }, [currentIndex, totalQuestions, questions.length])
 
   const handleRestart = useCallback(() => {
     setPhase("select")
@@ -163,8 +147,7 @@ export default function InterviewPage() {
     setCurrentAnswer("")
     setFeedback(null)
     setTotalScore(0)
-    clearTimer()
-  }, [clearTimer])
+  }, [])
 
   if (phase === "error") {
     return (
@@ -196,9 +179,9 @@ export default function InterviewPage() {
 
       {phase === "loading" && (
         <AiLoadingState
-          phase="Starting your interview"
+          phase={interviewType === "hr" ? "Preparing HR interview" : "Starting your interview"}
           stages={["Generating questions", "Setting up environment", "Ready to begin"]}
-          currentStage={1}
+          currentStage={loadingStage}
         />
       )}
 
@@ -207,7 +190,6 @@ export default function InterviewPage() {
           question={{ question: questions[currentIndex] ?? "Question unavailable." }}
           questionNumber={currentIndex + 1}
           totalQuestions={totalQuestions}
-          timeLeft={timeLeft}
           answer={currentAnswer}
           isSubmitting={isSubmitting}
           onAnswerChange={setCurrentAnswer}
