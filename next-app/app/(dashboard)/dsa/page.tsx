@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -78,19 +78,22 @@ const platformShort: Record<string, string> = {
 }
 
 export default function DSATrackerPage() {
-  const [problemStatus, setProblemStatus] = useState<Record<string, boolean>>({})
-  const [streak, setStreak] = useState(0)
-  const [hydrated, setHydrated] = useState(false)
-
-  useEffect(() => {
-    const saved = localStorage.getItem("dsa-progress")
-    if (saved) try { setProblemStatus(JSON.parse(saved)) } catch {}
-    const savedStreak = localStorage.getItem("dsa-streak")
-    if (savedStreak) try { setStreak(JSON.parse(savedStreak)) } catch {}
-    setHydrated(true)
-  }, [])
+  const [problemStatus, setProblemStatus] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return {}
+    try {
+      const saved = localStorage.getItem("dsa-progress")
+      return saved ? JSON.parse(saved) : {}
+    } catch { return {} }
+  })
+  const [streak, setStreak] = useState(() => {
+    if (typeof window === "undefined") return 0
+    try {
+      const saved = localStorage.getItem("dsa-streak")
+      return saved ? Number(JSON.parse(saved)) : 0
+    } catch { return 0 }
+  })
   const [search, setSearch] = useState("")
-  const [activeTab, setActiveTab] = useState("arrays")
+  const [activeTab, setActiveTab] = useState(dsaTopics[0]?.id ?? "arrays")
 
   const allProblems = useMemo(
     () => dsaTopics.flatMap((t) => t.problems),
@@ -127,11 +130,9 @@ export default function DSATrackerPage() {
     }
   }, [allProblems, problemStatus])
 
-  useEffect(() => {
-    if (!filteredTopics.find((t) => t.id === activeTab)) {
-      setActiveTab(filteredTopics[0]?.id ?? "arrays")
-    }
-  }, [filteredTopics, activeTab])
+  const safeTab = filteredTopics.find((t) => t.id === activeTab)
+    ? activeTab
+    : filteredTopics[0]?.id ?? "arrays"
 
   const toggleProblem = (id: string) => {
     setProblemStatus((prev) => {
@@ -256,7 +257,7 @@ export default function DSATrackerPage() {
               />
             </div>
           </div>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs value={safeTab} onValueChange={setActiveTab} className="w-full">
             <div className="border-b px-4 pt-2">
               <TabsList className="w-full flex-nowrap justify-start overflow-x-auto">
                 {filteredTopics.map((cat) => {

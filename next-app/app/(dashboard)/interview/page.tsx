@@ -31,7 +31,9 @@ export default function InterviewPage() {
   const [loadingStage, setLoadingStage] = useState(1)
   const answersRef = useRef(answers)
 
-  answersRef.current = answers
+  useEffect(() => {
+    answersRef.current = answers
+  }, [answers])
 
   useEffect(() => {
     if (phase !== "loading") return

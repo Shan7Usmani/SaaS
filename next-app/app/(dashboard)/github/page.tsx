@@ -17,19 +17,14 @@ import { toast } from "sonner"
 
 export default function GitHubPage() {
   const [username, setUsername] = useState("")
-  const [connected, setConnected] = useState("")
+  const [connected, setConnected] = useState(() => {
+    if (typeof window === "undefined") return ""
+    return localStorage.getItem("github-username") ?? ""
+  })
   const [userData, setUserData] = useState<{ login: string; avatar_url: string; name: string; public_repos: number; followers: number; following: number; bio: string; html_url: string } | null>(null)
   const [repos, setRepos] = useState<{ name: string; stargazers_count: number; forks_count: number; language: string; html_url: string; description: string }[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-
-  useEffect(() => {
-    const saved = localStorage.getItem("github-username")
-    if (saved) {
-      setConnected(saved)
-      fetchGitHubData(saved)
-    }
-  }, [])
 
   const fetchGitHubData = async (user: string) => {
     setLoading(true)
@@ -50,6 +45,11 @@ export default function GitHubPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (!connected) return
+    Promise.resolve().then(() => fetchGitHubData(connected))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleConnect = () => {
     if (!username.trim()) return

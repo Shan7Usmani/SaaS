@@ -53,12 +53,16 @@ export function ContributionHeatmap() {
   start.setDate(start.getDate() - weeks * 7)
   start.setHours(0, 0, 0, 0)
 
+  const startMs = start.getTime()
+  const todayMs = today.getTime()
+
   const weeksArray = useMemo(() => {
     const result: { date: string; count: number; day: number }[][] = []
-    const cursor = new Date(start)
+    const cursor = new Date(startMs)
     const maxCount = Math.max(...Object.values(data), 1)
+    const end = todayMs
 
-    while (cursor <= today) {
+    while (cursor.getTime() <= end) {
       const week: { date: string; count: number; day: number }[] = []
       for (let d = 0; d < 7; d++) {
         const dateStr = cursor.toISOString().slice(0, 10)
@@ -68,12 +72,12 @@ export function ContributionHeatmap() {
           day: cursor.getDay(),
         })
         cursor.setDate(cursor.getDate() + 1)
-        if (cursor > today) break
+        if (cursor.getTime() > end) break
       }
       result.push(week)
     }
     return { weeks: result, maxCount }
-  }, [data, start.getTime(), today.getTime(), weeks])
+  }, [data, startMs, todayMs, weeks])
 
   return (
     <div className="w-full overflow-x-auto">
