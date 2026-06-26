@@ -437,9 +437,9 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="mt-10 border-t border-primary/10 pt-6 text-xs text-muted-foreground">
-            <div className="mx-auto grid max-w-7xl grid-cols-3 items-center px-4 sm:px-6">
-              <p className="text-left">&copy; {new Date().getFullYear()} PlacementOS. All rights reserved.</p>
-              <div className="text-center">
+            <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-2 px-4 text-center sm:px-6 md:grid-cols-3">
+              <p className="md:text-left">&copy; {new Date().getFullYear()} PlacementOS. All rights reserved.</p>
+              <div className="md:text-center">
                 <span className="group inline-flex items-center justify-center gap-1.5 transition-all duration-500 hover:text-primary">
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />

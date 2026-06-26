@@ -178,9 +178,9 @@ export default function FeaturesPage() {
 
       {/* Footer */}
       <footer className="border-t border-primary/10 py-8">
-        <div className="mx-auto grid max-w-7xl grid-cols-3 items-center px-4 text-xs text-muted-foreground sm:px-6">
-          <p className="text-left">&copy; {new Date().getFullYear()} PlacementOS. All rights reserved.</p>
-          <div className="text-center">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-2 px-4 text-center text-xs text-muted-foreground sm:px-6 md:grid-cols-3">
+          <p className="md:text-left">&copy; {new Date().getFullYear()} PlacementOS. All rights reserved.</p>
+          <div className="md:text-center">
             <span className="group inline-flex items-center justify-center gap-1.5 transition-all duration-500 hover:text-primary">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
@@ -192,7 +192,7 @@ export default function FeaturesPage() {
               <span className="ml-0.5 opacity-0 transition-all duration-300 group-hover:opacity-100">✦</span>
             </span>
           </div>
-          <div className="flex justify-end gap-4">
+          <div className="flex justify-center gap-4 md:justify-end">
             <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
             <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
             <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>

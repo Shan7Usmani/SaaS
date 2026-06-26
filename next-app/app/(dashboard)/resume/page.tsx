@@ -25,6 +25,7 @@ export default function ResumePage() {
   const [error, setError] = useState<string | null>(null)
   const [analysisStage, setAnalysisStage] = useState(0)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const stageRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const stages = [
     "Extracting text from PDF",
@@ -76,6 +77,7 @@ export default function ResumePage() {
   useEffect(() => {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current)
+      if (stageRef.current) clearInterval(stageRef.current)
     }
   }, [])
 
@@ -88,6 +90,7 @@ export default function ResumePage() {
     const stageInterval = setInterval(() => {
       setAnalysisStage((prev) => Math.min(prev + 1, stages.length - 1))
     }, 800)
+    stageRef.current = stageInterval
 
     try {
       const formData = new FormData()

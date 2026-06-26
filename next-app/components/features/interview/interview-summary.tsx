@@ -45,7 +45,7 @@ export function InterviewSummary({ totalScore, questions, onRestart, onBack }: I
           <p className="text-muted-foreground mt-2">Overall Interview Score</p>
           <Progress
             value={totalScore}
-            className="mt-4 w-64 h-2.5"
+            className="mt-4 w-full max-w-xs h-2.5"
             indicatorClassName={
               totalScore >= 70 ? "bg-emerald-500" : totalScore >= 40 ? "bg-amber-500" : "bg-red-500"
             }

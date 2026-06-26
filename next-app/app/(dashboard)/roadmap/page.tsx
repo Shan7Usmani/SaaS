@@ -206,15 +206,15 @@ export default function RoadmapPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Your Placement Roadmap</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Your Placement Roadmap</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             AI-generated plan personalized for your goals
           </p>
         </div>
         <Select value={selectedCompany} onValueChange={handleCompanyChange}>
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-full sm:w-44">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
