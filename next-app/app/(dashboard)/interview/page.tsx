@@ -89,7 +89,10 @@ export default function InterviewPage() {
         body: JSON.stringify({ answer, question_index: currentIndex }),
       })
 
-      if (!res.ok) throw new Error("Failed to submit answer")
+      if (!res.ok) {
+        const errBody = await res.text()
+        throw new Error(`API ${res.status}: ${errBody}`)
+      }
 
       const json = await res.json()
       const result = json.data
@@ -114,9 +117,9 @@ export default function InterviewPage() {
       }
 
       setIsSubmitting(false)
-    } catch {
+    } catch (e) {
       setPhase("error")
-      setErrorMessage("Failed to submit answer. Please restart the interview.")
+      setErrorMessage(e instanceof Error ? e.message : "Failed to submit answer")
       setIsSubmitting(false)
     }
   }, [currentAnswer, isSubmitting, currentIndex, questions, interviewId])

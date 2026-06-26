@@ -4,9 +4,9 @@ import { AppError } from "@/lib/utils/errors"
 const DAILY_LIMITS: Record<string, number> = {
   roadmap_generate: 3,
   resume_analyze: 2,
-  interview_start: 3,
-  interview_answer: 20,
-  ai_chat: 20,
+  interview_start: 20,
+  interview_answer: 200,
+  ai_chat: 200,
 }
 
 export async function checkAILimit(userId: string, feature: string) {
