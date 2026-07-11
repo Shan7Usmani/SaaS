@@ -123,7 +123,7 @@ export default function ResumePage() {
     } finally {
       clearInterval(stageInterval)
     }
-  }, [pollAnalysis])
+  }, [pollAnalysis, stages.length])
 
   const handleReset = useCallback(() => {
     setPageState("idle")

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import Image from "next/image"
 import {
   BookOpen,
   Users,
@@ -13,8 +14,6 @@ import {
   Loader2,
   Code2,
 } from "lucide-react"
-import { toast } from "sonner"
-
 export default function GitHubPage() {
   const [username, setUsername] = useState("")
   const [connected, setConnected] = useState(() => {
@@ -105,10 +104,13 @@ export default function GitHubPage() {
               {userData && (
                 <>
                   <div className="flex items-center gap-4 rounded-lg border p-4">
-                    <img
+                    <Image
                       src={userData.avatar_url}
                       alt={userData.login}
+                      width={64}
+                      height={64}
                       className="h-16 w-16 rounded-full"
+                      unoptimized
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-lg font-semibold truncate">{userData.name || userData.login}</p>
@@ -144,10 +146,13 @@ export default function GitHubPage() {
 
                   <div className="overflow-hidden rounded-lg border">
                     <div className="flex items-center justify-center p-4 dark:invert">
-                      <img
+                      <Image
                         src={`https://ghchart.rshah.org/${connected}`}
                         alt={`${connected}'s GitHub contribution graph`}
+                        width={900}
+                        height={150}
                         className="w-full max-w-full"
+                        unoptimized
                       />
                     </div>
                   </div>

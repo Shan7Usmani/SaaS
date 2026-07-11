@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { AlertTriangle, CheckCircle2, Sparkles, Lightbulb, ArrowUp } from "lucide-react"
+import { AlertTriangle, Sparkles, Lightbulb, ArrowUp } from "lucide-react"
 
 interface AnalysisResult {
   score: number
@@ -27,20 +27,6 @@ interface Suggestion {
 interface ResumeResultsProps {
   result: AnalysisResult
   onReset: () => void
-}
-
-function ScoreBar({ label, value }: { label: string; value: number }) {
-  const color =
-    value >= 70 ? "bg-emerald-500" : value >= 40 ? "bg-amber-500" : "bg-red-500"
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-mono font-medium">{value}/100</span>
-      </div>
-      <Progress value={value} className="h-2.5" indicatorClassName={color} />
-    </div>
-  )
 }
 
 const priorityColor = {

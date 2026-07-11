@@ -18,10 +18,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Loader2 } from "lucide-react"
+import { Loader2, MailCheck } from "lucide-react"
 
 export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
+  const [emailSent, setEmailSent] = useState(false)
+  const [sentEmail, setSentEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const { signUp } = useAuth()
@@ -38,14 +40,51 @@ export default function RegisterPage() {
     setIsLoading(true)
     setError(null)
 
-    const { error } = await signUp(data.email, data.password, data.name)
+    const { error, emailConfirmationRequired } = await signUp(data.email, data.password, data.name)
     if (error) {
       setError(error)
       setIsLoading(false)
       return
     }
 
+    if (emailConfirmationRequired) {
+      setSentEmail(data.email)
+      setEmailSent(true)
+      setIsLoading(false)
+      return
+    }
+
     router.push("/onboarding")
+  }
+
+  if (emailSent) {
+    return (
+      <Card>
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <MailCheck className="h-6 w-6 text-primary" />
+          </div>
+          <CardTitle className="text-2xl">Check your email</CardTitle>
+          <CardDescription>
+            We sent a confirmation link to{" "}
+            <span className="font-medium text-foreground">{sentEmail}</span>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="text-center">
+          <p className="text-muted-foreground text-sm">
+            Click the link in the email to verify your account and start your placement preparation journey.
+          </p>
+        </CardContent>
+        <CardFooter className="justify-center">
+          <Link
+            href="/auth/login"
+            className="text-primary text-sm font-medium hover:underline"
+          >
+            Back to sign in
+          </Link>
+        </CardFooter>
+      </Card>
+    )
   }
 
   return (

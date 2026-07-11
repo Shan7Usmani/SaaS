@@ -14,7 +14,7 @@ export async function GET() {
     const rl = checkRateLimit(`dashboard:${user.id}`, { maxRequests: 60, windowMs: 60000 })
     const rlHeaders = getRateLimitHeaders(rl.remaining, rl.resetAt, 60)
 
-    const [profileRes, roadmapRes, resumeRes, interviewsRes, applicationsRes] =
+    const [, roadmapRes, resumeRes, interviewsRes, applicationsRes] =
       await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).single(),
         supabase
@@ -42,7 +42,6 @@ export async function GET() {
           .eq("user_id", user.id),
       ])
 
-    const profile = profileRes.data
     const lastRoadmap = roadmapRes.data
     const lastResume = resumeRes.data
     const interviews = interviewsRes.data || []

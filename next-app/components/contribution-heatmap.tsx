@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils"
 
 const DAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""]
 const CELL_SIZE = 14
-const CELL_GAP = 3
 
 function getIntensity(count: number, maxCount: number): string {
   if (count === 0) return "bg-muted"
@@ -77,7 +76,7 @@ export function ContributionHeatmap() {
       result.push(week)
     }
     return { weeks: result, maxCount }
-  }, [data, startMs, todayMs, weeks])
+  }, [data, startMs, todayMs])
 
   return (
     <div className="w-full overflow-x-auto">

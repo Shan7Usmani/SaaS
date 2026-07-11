@@ -17,7 +17,7 @@ export async function POST() {
       { data: { message: "Logged out successfully" } },
       { status: 200, headers: rlHeaders }
     )
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { data: { message: "Logged out successfully" } },
       { status: 200 }

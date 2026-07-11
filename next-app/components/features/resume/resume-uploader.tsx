@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Upload, FileText, X, CheckCircle2, AlertCircle } from "lucide-react"
+import { Upload, FileText, CheckCircle2, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface ResumeUploaderProps {

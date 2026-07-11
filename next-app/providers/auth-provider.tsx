@@ -15,7 +15,7 @@ interface AuthContextType {
     email: string,
     password: string,
     name: string
-  ) => Promise<{ error: string | null }>
+  ) => Promise<{ error: string | null; emailConfirmationRequired: boolean }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
 }
@@ -80,14 +80,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signUp(email: string, password: string, name: string) {
     try {
-      const { error } = await getSb().auth.signUp({
+      const { data, error } = await getSb().auth.signUp({
         email,
         password,
         options: { data: { name } },
       })
-      return { error: error?.message ?? null }
+      if (error) return { error: error.message, emailConfirmationRequired: false }
+      const emailConfirmationRequired = !data.session
+      return { error: null, emailConfirmationRequired }
     } catch {
-      return { error: "Network error. Please check your connection and try again." }
+      return { error: "Network error. Please check your connection and try again.", emailConfirmationRequired: false }
     }
   }
 
