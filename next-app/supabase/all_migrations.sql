@@ -1,7 +1,14 @@
-CREATE TABLE profiles (
+-- PlacementOS — Full Database Schema
+-- Run this ONCE in Supabase SQL Editor to bring the DB to the correct state.
+-- Uses IF EXISTS / IF NOT EXISTS so it's safe to re-run.
+
+-- ============================================================
+-- 1. PROFILES
+-- ============================================================
+CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT NOT NULL,
-  name TEXT,
+  full_name TEXT,
   avatar_url TEXT,
   college TEXT,
   branch TEXT,
@@ -12,15 +19,19 @@ CREATE TABLE profiles (
   preferred_role TEXT CHECK (preferred_role IN ('swe', 'data_analyst', 'ai_engineer', 'web_dev')),
   onboarding_completed BOOLEAN DEFAULT false,
   tier TEXT DEFAULT 'free' CHECK (tier IN ('free', 'pro', 'premium')),
+  auth_provider TEXT DEFAULT 'email',
+  auth_id TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Indexes
-CREATE INDEX profiles_email_idx ON profiles (email);
-CREATE INDEX profiles_tier_idx ON profiles (tier);
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS auth_provider TEXT DEFAULT 'email';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS auth_id TEXT;
 
--- Updated_at trigger
+CREATE INDEX IF NOT EXISTS profiles_email_idx ON profiles (email);
+CREATE INDEX IF NOT EXISTS profiles_tier_idx ON profiles (tier);
+
+-- updated_at trigger
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -29,32 +40,36 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS set_profiles_updated_at ON profiles;
 CREATE TRIGGER set_profiles_updated_at
   BEFORE UPDATE ON profiles
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
--- Sync from auth.users trigger
+-- Auto-create profile on signup
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO profiles (id, email, name)
+  INSERT INTO profiles (id, email, full_name)
   VALUES (
     NEW.id,
     NEW.email,
-    NEW.raw_user_meta_data->>'name'
+    COALESCE(NEW.raw_user_meta_data->>'name', '')
   );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION handle_new_user();
 
-
-CREATE TABLE roadmaps (
+-- ============================================================
+-- 2. ROADMAPS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS roadmaps (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   target_company TEXT NOT NULL,
@@ -68,15 +83,16 @@ CREATE TABLE roadmaps (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX roadmaps_user_id_idx ON roadmaps (user_id);
-CREATE INDEX roadmaps_created_at_idx ON roadmaps (user_id, created_at);
+CREATE INDEX IF NOT EXISTS roadmaps_user_id_idx ON roadmaps (user_id);
+CREATE INDEX IF NOT EXISTS roadmaps_created_at_idx ON roadmaps (user_id, created_at);
 
+DROP TRIGGER IF EXISTS set_roadmaps_updated_at ON roadmaps;
 CREATE TRIGGER set_roadmaps_updated_at
   BEFORE UPDATE ON roadmaps
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TABLE roadmap_topics (
+CREATE TABLE IF NOT EXISTS roadmap_topics (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   roadmap_id UUID NOT NULL REFERENCES roadmaps(id) ON DELETE CASCADE,
   month_number SMALLINT NOT NULL CHECK (month_number BETWEEN 1 AND 12),
@@ -86,10 +102,12 @@ CREATE TABLE roadmap_topics (
   sort_order SMALLINT DEFAULT 0
 );
 
-CREATE INDEX roadmap_topics_roadmap_id_idx ON roadmap_topics (roadmap_id);
+CREATE INDEX IF NOT EXISTS roadmap_topics_roadmap_id_idx ON roadmap_topics (roadmap_id);
 
-
-CREATE TABLE resumes (
+-- ============================================================
+-- 3. RESUMES
+-- ============================================================
+CREATE TABLE IF NOT EXISTS resumes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   status TEXT DEFAULT 'uploaded' CHECK (status IN ('uploaded', 'analyzing', 'completed', 'failed')),
@@ -103,11 +121,13 @@ CREATE TABLE resumes (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX resumes_user_id_idx ON resumes (user_id);
-CREATE INDEX resumes_created_at_idx ON resumes (user_id, created_at);
+CREATE INDEX IF NOT EXISTS resumes_user_id_idx ON resumes (user_id);
+CREATE INDEX IF NOT EXISTS resumes_created_at_idx ON resumes (user_id, created_at);
 
-
-CREATE TABLE interviews (
+-- ============================================================
+-- 4. INTERVIEWS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS interviews (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   type TEXT NOT NULL CHECK (type IN ('technical', 'hr')),
@@ -120,34 +140,41 @@ CREATE TABLE interviews (
   status TEXT DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed')),
   current_question SMALLINT DEFAULT 0,
   started_at TIMESTAMPTZ DEFAULT now(),
-  completed_at TIMESTAMPTZ
+  completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX interviews_user_id_idx ON interviews (user_id);
+CREATE INDEX IF NOT EXISTS interviews_user_id_idx ON interviews (user_id);
+CREATE INDEX IF NOT EXISTS interviews_created_at_idx ON interviews (user_id, created_at);
 
-
-CREATE TABLE applications (
+-- ============================================================
+-- 5. APPLICATIONS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS applications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   company TEXT NOT NULL,
   role TEXT NOT NULL,
-  stage TEXT NOT NULL DEFAULT 'applied' CHECK (stage IN ('applied', 'oa', 'interview', 'offer', 'rejected')),
+  stage TEXT NOT NULL DEFAULT 'applied' CHECK (stage IN ('applied', 'oa_received', 'interview', 'offer', 'rejected')),
   notes TEXT,
   applied_at DATE NOT NULL DEFAULT CURRENT_DATE,
   updated_at TIMESTAMPTZ DEFAULT now(),
   sort_order INTEGER DEFAULT 0
 );
 
-CREATE INDEX applications_user_id_idx ON applications (user_id);
-CREATE INDEX applications_stage_idx ON applications (user_id, stage);
+CREATE INDEX IF NOT EXISTS applications_user_id_idx ON applications (user_id);
+CREATE INDEX IF NOT EXISTS applications_stage_idx ON applications (user_id, stage);
 
+DROP TRIGGER IF EXISTS set_applications_updated_at ON applications;
 CREATE TRIGGER set_applications_updated_at
   BEFORE UPDATE ON applications
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
-
-CREATE TABLE feature_flags (
+-- ============================================================
+-- 6. FEATURE FLAGS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS feature_flags (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   flag_name TEXT UNIQUE NOT NULL,
   is_enabled BOOLEAN DEFAULT false,
@@ -156,12 +183,12 @@ CREATE TABLE feature_flags (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+DROP TRIGGER IF EXISTS set_feature_flags_updated_at ON feature_flags;
 CREATE TRIGGER set_feature_flags_updated_at
   BEFORE UPDATE ON feature_flags
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
--- Seed MVP feature flags
 INSERT INTO feature_flags (flag_name, is_enabled) VALUES
   ('onboarding', true),
   ('roadmap_generator', true),
@@ -177,10 +204,13 @@ INSERT INTO feature_flags (flag_name, is_enabled) VALUES
   ('behavioral_coach', false),
   ('job_finder', false),
   ('study_groups', false),
-  ('analytics', false);
+  ('analytics', false)
+ON CONFLICT (flag_name) DO NOTHING;
 
-
-CREATE TABLE usage_tracking (
+-- ============================================================
+-- 7. USAGE TRACKING
+-- ============================================================
+CREATE TABLE IF NOT EXISTS usage_tracking (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   feature TEXT NOT NULL,
@@ -190,52 +220,11 @@ CREATE TABLE usage_tracking (
   UNIQUE (user_id, feature, reset_at)
 );
 
-CREATE INDEX usage_tracking_user_idx ON usage_tracking (user_id, feature, reset_at);
+CREATE INDEX IF NOT EXISTS usage_tracking_user_idx ON usage_tracking (user_id, feature, reset_at);
 
-
--- Fix schema mismatches:
--- 1. Rename profiles.name -> profiles.full_name
--- 2. Update applications stage 'oa' -> 'oa_received'
-
--- Rename column
-ALTER TABLE profiles RENAME COLUMN name TO full_name;
-
--- Update trigger to use new column name
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO profiles (id, email, full_name)
-  VALUES (
-    NEW.id,
-    NEW.email,
-    NEW.raw_user_meta_data->>'name'
-  );
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Update applications stage check constraint
-ALTER TABLE applications DROP CONSTRAINT IF EXISTS applications_stage_check;
-ALTER TABLE applications ADD CONSTRAINT applications_stage_check
-  CHECK (stage IN ('applied', 'oa_received', 'interview', 'offer', 'rejected'));
-
--- Update existing data
-UPDATE applications SET stage = 'oa_received' WHERE stage = 'oa';
-
-
--- Add auth_provider and auth_id columns to profiles
-ALTER TABLE profiles
-  ADD COLUMN auth_provider TEXT DEFAULT 'email',
-  ADD COLUMN auth_id TEXT;
-
-
-ALTER TABLE interviews ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
-
-DROP INDEX IF EXISTS interviews_created_at_idx;
-CREATE INDEX interviews_created_at_idx ON interviews (user_id, created_at);
-
-
--- Enable RLS on all tables
+-- ============================================================
+-- 8. RLS POLICIES
+-- ============================================================
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE roadmaps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE roadmap_topics ENABLE ROW LEVEL SECURITY;
@@ -244,15 +233,21 @@ ALTER TABLE interviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE usage_tracking ENABLE ROW LEVEL SECURITY;
 
--- Profiles: users can read/update their own
+-- Drop existing policies first to avoid duplicates
+DROP POLICY IF EXISTS profiles_own ON profiles;
+DROP POLICY IF EXISTS roadmaps_own ON roadmaps;
+DROP POLICY IF EXISTS roadmap_topics_own ON roadmap_topics;
+DROP POLICY IF EXISTS resumes_own ON resumes;
+DROP POLICY IF EXISTS interviews_own ON interviews;
+DROP POLICY IF EXISTS applications_own ON applications;
+DROP POLICY IF EXISTS usage_tracking_own ON usage_tracking;
+
 CREATE POLICY profiles_own ON profiles
   FOR ALL USING (id = auth.uid()) WITH CHECK (id = auth.uid());
 
--- Roadmaps: users can CRUD their own
 CREATE POLICY roadmaps_own ON roadmaps
   FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
--- Roadmap topics: users can CRUD their own (via roadmap ownership)
 CREATE POLICY roadmap_topics_own ON roadmap_topics
   FOR ALL USING (
     EXISTS (SELECT 1 FROM roadmaps WHERE roadmaps.id = roadmap_topics.roadmap_id AND roadmaps.user_id = auth.uid())
@@ -260,24 +255,21 @@ CREATE POLICY roadmap_topics_own ON roadmap_topics
     EXISTS (SELECT 1 FROM roadmaps WHERE roadmaps.id = roadmap_topics.roadmap_id AND roadmaps.user_id = auth.uid())
   );
 
--- Resumes: users can CRUD their own
 CREATE POLICY resumes_own ON resumes
   FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
--- Interviews: users can CRUD their own
 CREATE POLICY interviews_own ON interviews
   FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
--- Applications: users can CRUD their own
 CREATE POLICY applications_own ON applications
   FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
--- Usage tracking: users can read their own, service role can write
 CREATE POLICY usage_tracking_own ON usage_tracking
   FOR SELECT USING (user_id = auth.uid());
 
-
--- Backfill profiles for existing auth users who don't have one
+-- ============================================================
+-- 9. BACKFILL
+-- ============================================================
 INSERT INTO profiles (id, email, full_name, auth_provider, auth_id)
 SELECT
   au.id,
@@ -287,5 +279,5 @@ SELECT
   au.id
 FROM auth.users au
 LEFT JOIN profiles p ON p.id = au.id
-WHERE p.id IS NULL;
-
+WHERE p.id IS NULL
+ON CONFLICT (id) DO NOTHING;
